@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:integration="http://www.springframework.org/schema/integration"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:jms="http://www.springframework.org/schema/integration/jms"
+	xmlns:int-jms="http://www.springframework.org/schema/integration/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+						http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd">
+
+	<int:channel id="inputChannel" />
+	<int:channel id="outputChannel" />
+
+
+	<int-jms:outbound-channel-adapter id="jmsOutbound"
+		destination-name="outboundQueue"
+		connection-factory="connectionFactory"
+		channel="outputChannel" />
+
+
+	<bean id="connectionFactory"
+		class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="tcp://localhost:61616" />
+		<property name="userName" value="admin" />
+		<property name="password" value="admin" />
+	</bean>
+
+
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="connectionFactory" />
+	</bean>
+
+	<int-jms:message-driven-channel-adapter id="jmsInbound"
+		destination-name="inboundQueue"
+		connection-factory="connectionFactory"
+		channel="inputChannel" />
+
+	<int:gateway id="messageGateway"
+		service-interface="com.example.Integration.MessageGateway">
+		<int:method name="sendMessage" request-channel="inputChannel" />
+	</int:gateway>
+
+
+	<int:service-activator input-channel="inputChannel" ref="someService"
+		method="processMessage" />
+
+	<bean id="someService" class="com.example.Integration.Service" />
+
+
+</beans>
+
+    
+    
